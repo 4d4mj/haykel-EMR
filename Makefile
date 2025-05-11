@@ -30,7 +30,7 @@ all: dev
 # ─── DEVELOPMENT ENVIRONMENT ───────────────────────────────────────────────────
 dev: ## Start development environment (builds images if necessary)
 	@echo "Starting development environment..."
-	$(COMPOSE_DEV) up --build -d
+	$(COMPOSE_DEV) up --watch
 
 up-dev: dev # Alias for dev
 

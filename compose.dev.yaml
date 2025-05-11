@@ -1,62 +1,58 @@
 services:
   next-app:
-    container_name: next-app_dev # Adding _dev to distinguish if you have other environments
+    container_name: next-app_dev
     build:
       context: ./next-app
       dockerfile: dev.Dockerfile
     environment:
-      # DATABASE_URL for the Next.js app to connect to the PostgreSQL service.
-      # Uses service discovery via the service name 'postgres-db'.
       DATABASE_URL: postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres-db:5432/${POSTGRES_DB:-mydb}
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000} # Best to define in .env, with a fallback
-      NODE_ENV: development # Explicitly set NODE_ENV for development
-      WATCHPACK_POLLING: "true"
-      # Other Next.js specific environment variables can be added here or in .env
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NODE_ENV: development
     env_file:
-      - .env # For sensitive data like NEXTAUTH_SECRET, specific DB credentials
-    volumes:
-      # OLD
-      # - ./next-app/src:/app/src
-      # - ./next-app/public:/app/public
-
-      # Mount source code for live reloading in development
-      - ./next-app:/app # Mount the entire next-app directory to /app
-      - app_node_modules:/app/node_modules # Optional: if using named volume for node_modules
-      # By mounting the whole app, node_modules will be created inside the container
-      # if not present or can be handled by the Dockerfile.
-      # If your Dockerfile copies package.json and runs npm install,
-      # you might want a named volume for node_modules to persist them separately
-      # from the source code mount, to avoid issues with host vs container node_modules.
-      # e.g. - ./next-app/src:/app/src (more specific mounts)
-      #      - ./next-app/public:/app/public
-      #      - ./next-app/package.json:/app/package.json
-      #      - ./next-app/package-lock.json:/app/package-lock.json (or yarn.lock)
-      #      - ./next-app/tsconfig.json:/app/tsconfig.json
-      #      - ./next-app/next.config.js:/app/next.config.js (or .mjs/.ts)
-      #      - ./next-app/prisma:/app/prisma # If prisma schema is within next-app
-      #      - app_node_modules:/app/node_modules # Named volume for node_modules
-      # However, mounting the whole ./next-app:/app is simpler and often works fine for dev.
+      - .env
+    develop:
+      watch:
+        - action: sync # Sync source code (excluding ignored paths)
+          path: ./next-app/src # Source on host
+          target: /app/src      # Destination in container
+          ignore:         # Paths to ignore from syncing (relative to 'path' above)
+            - node_modules/
+            - .next/
+            - .git/ # Good to add if .git is ever inside next-app
+            # Add any other build artifacts or large folders within ./next-app you don't want synced
+        - action: rebuild # Rebuild the image if package.json changes
+          path: ./next-app/package.json
+        # You might also want to watch package-lock.json or yarn.lock for rebuild
+        - action: rebuild
+          path: ./next-app/package-lock.json
+        # - action: rebuild
+        #   path: ./next-app/yarn.lock # If using yarn
     ports:
-      - "${APP_PORT:-3000}:3000" # Allow configuring host port via .env
+      - "${APP_PORT:-3000}:3000"
     networks:
-      - my_stack_network # Renamed for clarity if not truly external/shared beyond this stack
-    restart: unless-stopped # More suitable for dev than 'always' for the app container
+      - my_stack_network
+    restart: unless-stopped
     depends_on:
       postgres-db:
-        condition: service_healthy # Ensures PostgreSQL is ready before next-app starts
+        condition: service_healthy
+    # Still use a named volume for node_modules to isolate them from host interference
+    # This ensures the container uses node_modules built inside the image.
+    # The 'develop:watch' syncs other files around it.
+    volumes:
+      - app_node_modules:/app/node_modules
 
   postgres-db:
     container_name: postgres-db_dev
-    image: postgres:16-alpine # Using a more specific and potentially smaller image (e.g., Alpine variant)
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password} # CRITICAL: Set this in .env for production
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: ${POSTGRES_DB:-mydb}
-      PGDATA: /var/lib/postgresql/data/pgdata # Explicitly set PGDATA (optional, but good practice)
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - pgdata_dev:/var/lib/postgresql/data/pgdata # Persist database data using a named volume
+      - pgdata_dev:/var/lib/postgresql/data/pgdata
     ports:
-      - "${POSTGRES_PORT:-5432}:5432" # Allow configuring host port via .env
+      - "${POSTGRES_PORT:-5432}:5432"
     networks:
       - my_stack_network
     healthcheck:
@@ -64,18 +60,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s # Optional: grace period for the container to start before health checks begin
-    restart: always # Good for a database service
+      start_period: 10s
+    restart: always
 
-# Networks define communication pathways between containers.
 networks:
-  my_stack_network: # Changed from my_network
-    driver: bridge # Default driver, explicit for clarity.
-    # If 'my_network' was intended to be an existing, externally managed network, use:
-    # name: my_actual_external_network_name
-    # external: true
+  my_stack_network:
+    driver: bridge
 
-# Volumes are used for persisting data generated by and used by Docker containers.
 volumes:
-  pgdata_dev: # Named volume for PostgreSQL data persistence (suffixed with _dev)
-  app_node_modules: {}
+  pgdata_dev:
+  app_node_modules: {} # Ensure this named volume is declared

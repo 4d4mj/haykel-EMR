@@ -3,12 +3,14 @@ export const ROLES = {
   DOCTOR: 'doctor',
   NURSE: 'nurse',
   ADMIN: 'admin',
+  BILLING_STAFF: 'billing_staff', // Added
   // ... other roles
 } as const;
 
 export const PERMISSIONS = {
   READ_PATIENT_RECORD: 'read_patient_record',
   EDIT_PATIENT_RECORD: 'edit_patient_record',
+  EDIT_BILLING_INFO: 'edit_billing_info', // Added
   // ... other permissions
 } as const;
 
