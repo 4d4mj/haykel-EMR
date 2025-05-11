@@ -1,0 +1,16 @@
+// In a constants file, e.g., constants/auth.ts
+export const ROLES = {
+  DOCTOR: 'doctor',
+  NURSE: 'nurse',
+  ADMIN: 'admin',
+  // ... other roles
+} as const;
+
+export const PERMISSIONS = {
+  READ_PATIENT_RECORD: 'read_patient_record',
+  EDIT_PATIENT_RECORD: 'edit_patient_record',
+  // ... other permissions
+} as const;
+
+export type Role = typeof ROLES[keyof typeof ROLES];
+export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
