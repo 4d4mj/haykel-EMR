@@ -2,7 +2,11 @@
 
 FROM node:18-alpine
 
+ENV NODE_ENV development
+
 WORKDIR /app
+
+COPY prisma ./prisma
 
 # Install dependencies based on the preferred package manager
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
@@ -13,6 +17,8 @@ RUN \
   # Allow install without lockfile, so example works even without Node.js installed locally
   else echo "Warning: Lockfile not found. It is recommended to commit lockfiles to version control." && yarn install; \
   fi
+
+RUN npx prisma generate
 
 COPY src ./src
 COPY public ./public

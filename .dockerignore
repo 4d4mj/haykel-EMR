@@ -1,8 +1,10 @@
 .git
 .gitignore
 .vscode
+.next
 node_modules
 npm-debug.log
 Dockerfile
 *.md
 *.txt
+src/generated/prisma

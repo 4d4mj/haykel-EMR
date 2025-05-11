@@ -1,0 +1,24 @@
+// ./next-app/prisma/tsconfig.seed.json
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "esModuleInterop": true,
+    "target": "es2017", // Or your preferred target
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "strict": true, // Optional, but good practice
+    "skipLibCheck": true,
+  },
+  "ts-node": {
+    // Tell ts-node to skip type checking for faster execution if needed,
+    // though for seeding, it's usually fine to type-check.
+    // "transpileOnly": true,
+    "compilerOptions": {
+      "module": "CommonJS" // Ensure module is CommonJS for ts-node
+    }
+  },
+  "include": [
+    "seed.ts" // Only include the seed script itself
+    // You might also need to include files it imports if they aren't resolved via node_modules
+  ]
+}
